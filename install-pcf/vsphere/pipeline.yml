@@ -1,16 +1,22 @@
 resource_types:
-- name: pivnet
+# - name: pivnet
+#   type: docker-image
+#   source:
+#     repository: pivotalcf/pivnet-resource
+#     tag: latest-final
+
+- name: file-url
   type: docker-image
   source:
-    repository: pivotalcf/pivnet-resource
-    tag: latest-final
+    repository: pivotalservices/concourse-curl-resource
+    tag: latest
 
 resources:
 - name: pcf-pipelines
   type: git
   source:
-    uri: git@github.com:pivotal-cf/pcf-pipelines.git
-    branch: master
+    uri: git@github.com:tracyde/pcf-pipelines.git
+    branch: offline
     private_key: {{git_private_key}}
 
 # - name: customer-repo
@@ -20,20 +26,22 @@ resources:
 #     branch: master
 
 - name: pivnet-opsman-product
-  type: pivnet
+  type: file-url
   source:
-    api_token: {{pivnet_token}}
-    product_slug: ops-manager
-    product_version: {{opsman_major_minor_version}}
+    url: {{opsman_url}}
+    filename: {{opsman_filename}}
 
 - name: elastic-runtime
-  type: pivnet
-  check_every: 4h
+  type: file-url
   source:
-    api_token: {{pivnet_token}}
-    product_slug: elastic-runtime
-    product_version: 1\.10\.*
-    sort_by: semver
+    url: {{ert_url}}
+    filename: {{ert_filename}}
+
+- name: elastic-runtime-stemcell
+  type: file-url
+  source:
+    url: {{ert_stemcell_url}}
+    filename: {{ert_stemcell_filename}}
 
 jobs:
 - name: install-opsmgr
@@ -41,7 +49,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       trigger: true
 
   - task: deploy-opsman
@@ -82,7 +89,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [install-opsmgr]
       trigger: true
 
@@ -150,7 +156,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [configure-ops-director]
       trigger: true
 
@@ -167,9 +172,8 @@ jobs:
     - get: pcf-pipelines
     - get: pivnet-product
       resource: elastic-runtime
-      params: {globs: ["*.pivotal"]}
+    - get: elastic-runtime-stemcell
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [opsman-apply-changes]
       trigger: true
 
@@ -179,7 +183,6 @@ jobs:
       OPS_MGR_HOST: {{opsman_uri}}
       OPS_MGR_USR: {{opsman_admin_username}}
       OPS_MGR_PWD: {{opsman_admin_password}}
-      PIVNET_API_TOKEN: {{pivnet_token}}
       NO_PROXY: {{company_proxy_domain}}
       OM_IP: {{om_ip}}
 
@@ -188,7 +191,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [upload-elastic-runtime-tile]
       trigger: true
 
@@ -308,7 +310,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [config-elastic-runtime-tile]
       trigger: true
 
@@ -324,7 +325,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [product-apply-changes]
       trigger: true
 
@@ -340,7 +340,6 @@ jobs:
   - aggregate:
     - get: pcf-pipelines
     - get: pivnet-opsman-product
-      params: {globs: ["*.ova"]}
       passed: [disable-errands]
       trigger: true
 

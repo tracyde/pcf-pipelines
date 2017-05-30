@@ -17,6 +17,7 @@ params:
 inputs:
   - name: pivnet-product
   - name: pcf-pipelines
+  - name: elastic-runtime-stemcell
 
 run:
   path: pcf-pipelines/tasks/upload-product-and-stemcell/task.sh

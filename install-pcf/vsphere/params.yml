@@ -1,6 +1,12 @@
 # Pipeline resource configuration
-pivnet_token:             # Pivnet token for downloading resources from Pivnet. Find this token at https://network.pivotal.io/users/dashboard/edit-profile
-opsman_major_minor_version: 1\.10\.* # PCF Ops Manager minor version to track
+#pivnet_token:             # Pivnet token for downloading resources from Pivnet. Find this token at https://network.pivotal.io/users/dashboard/edit-profile
+#opsman_major_minor_version: 1\.10\.* # PCF Ops Manager minor version to track
+opsman_url:               # URL used to download Ops Manager 
+opsman_filename:          # Filename of downloaded Ops Manager
+ert_url:                  # URL used to download Elastic Runtime
+ert_filename:             # Filename of downloaded Elastic Runtime
+ert_stemcell_url:                  # URL used to download Stemcell for Elastic Runtime
+ert_stemcell_filename:             # Filename of downloaded Elastic Runtime Stemcell
 git_private_key:
 
 # vCenter configuration
