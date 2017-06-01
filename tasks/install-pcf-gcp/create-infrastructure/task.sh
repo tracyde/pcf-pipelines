@@ -2,7 +2,6 @@
 set -e
 
 root=$PWD
-version=$(cat tfstate-version/version)
 
 # us: ops-manager-us/pcf-gcp-1.9.2.tar.gz -> ops-manager-us/pcf-gcp-1.9.2.tar.gz
 pcf_opsman_bucket_path=$(grep -i 'us:.*.tar.gz' pivnet-opsmgr/*GCP.yml | cut -d' ' -f2)
@@ -15,7 +14,7 @@ ert_sql_instance_name="${GCP_RESOURCE_PREFIX}-sql-$(cat /proc/sys/kernel/random/
 pcf_ert_ssl_cert=$PCF_ERT_SSL_CERT
 pcf_ert_ssl_key=$PCF_ERT_SSL_KEY
 
-if [[ ${PCF_ERT_SSL_CERT} == "" ]]; then
+if [[ ${PCF_ERT_SSL_CERT} == "generate" ]]; then
   echo "Generating Self Signed Certs for sys.${PCF_ERT_DOMAIN} & cfapps.${PCF_ERT_DOMAIN} ..."
   pcf-pipelines/tasks/scripts/gen_ssl_certs.sh "sys.${PCF_ERT_DOMAIN}" "cfapps.${PCF_ERT_DOMAIN}"
   pcf_ert_ssl_cert=$(cat sys.${PCF_ERT_DOMAIN}.crt)
@@ -38,17 +37,37 @@ terraform plan \
   -var "pcf_ert_ssl_cert=${pcf_ert_ssl_cert}" \
   -var "pcf_ert_ssl_key=${pcf_ert_ssl_key}" \
   -var "ert_sql_instance_name=${ert_sql_instance_name}" \
-  -var "ert_sql_db_username=${ERT_SQL_DB_USERNAME}" \
-  -var "ert_sql_db_password=${ERT_SQL_DB_PASSWORD}" \
-  -out terraform-$version.tfplan \
+  -var "db_app_usage_service_username=${DB_APP_USAGE_SERVICE_USERNAME}" \
+  -var "db_app_usage_service_password=${DB_APP_USAGE_SERVICE_PASSWORD}" \
+  -var "db_autoscale_username=${DB_AUTOSCALE_USERNAME}" \
+  -var "db_autoscale_password=${DB_AUTOSCALE_PASSWORD}" \
+  -var "db_diego_username=${DB_DIEGO_USERNAME}" \
+  -var "db_diego_password=${DB_DIEGO_PASSWORD}" \
+  -var "db_notifications_username=${DB_NOTIFICATIONS_USERNAME}" \
+  -var "db_notifications_password=${DB_NOTIFICATIONS_PASSWORD}" \
+  -var "db_routing_username=${DB_ROUTING_USERNAME}" \
+  -var "db_routing_password=${DB_ROUTING_PASSWORD}" \
+  -var "db_uaa_username=${DB_UAA_USERNAME}" \
+  -var "db_uaa_password=${DB_UAA_PASSWORD}" \
+  -var "db_ccdb_username=${DB_CCDB_USERNAME}" \
+  -var "db_ccdb_password=${DB_CCDB_PASSWORD}" \
+  -var "db_accountdb_username=${DB_ACCOUNTDB_USERNAME}" \
+  -var "db_accountdb_password=${DB_ACCOUNTDB_PASSWORD}" \
+  -var "db_networkpolicyserverdb_username=${DB_NETWORKPOLICYSERVERDB_USERNAME}" \
+  -var "db_networkpolicyserverdb_password=${DB_NETWORKPOLICYSERVERDB_PASSWORD}" \
+  -var "db_nfsvolumedb_username=${DB_NFSVOLUMEDB_USERNAME}" \
+  -var "db_nfsvolumedb_password=${DB_NFSVOLUMEDB_PASSWORD}" \
+  -out terraform.tfplan \
+  -state terraform-state/terraform.tfstate \
   pcf-pipelines/tasks/install-pcf-gcp/terraform/$gcp_pcf_terraform_template
 
 terraform apply \
-  -state-out $root/create-infrastructure-output/terraform-$version.tfstate \
-  terraform-$version.tfplan
+  -state-out $root/create-infrastructure-output/terraform.tfstate \
+  -parallelism=5 \
+  terraform.tfplan
 
 cd $root/create-infrastructure-output
-  output_json=$(terraform output -json -state=terraform-$version.tfstate)
+  output_json=$(terraform output -json -state=terraform.tfstate)
   pub_ip_global_pcf=$(echo $output_json | jq --raw-output '.pub_ip_global_pcf.value')
   pub_ip_ssh_and_doppler=$(echo $output_json | jq --raw-output '.pub_ip_ssh_and_doppler.value')
   pub_ip_ssh_tcp_lb=$(echo $output_json | jq --raw-output '.pub_ip_ssh_tcp_lb.value')

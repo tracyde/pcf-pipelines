@@ -9,7 +9,6 @@ image_resource:
 inputs:
 - name: pcf-pipelines 
 - name: terraform-state
-- name: tfstate-version
 
 outputs:
 - name: wipe-output
@@ -18,6 +17,9 @@ params:
   GCP_PROJECT_ID:
   GCP_REGION:
   GCP_SERVICE_ACCOUNT_KEY:
+  OPSMAN_URI:
+  OPSMAN_USERNAME:
+  OPSMAN_PASSWORD:
 
 run:
   path: pcf-pipelines/tasks/install-pcf-gcp/wipe-env/task.sh
